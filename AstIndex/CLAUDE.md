@@ -56,6 +56,14 @@ mypy ast_index
 - **CLI** (`ast_index/cli.py`): Click-based command interface
   - Commands: index, update, rebuild, search, class, usages, inheritance, stats
   - All commands support `--format json` for AI integration
+  - `usages` command supports `--show-context` and `--file` options
+
+- **References Extraction** (`ast_index/references.py`): Regex-based symbol usage tracking
+  - Universal method works across all supported languages
+  - Extracts CamelCase types and function calls
+  - Filters keywords, standard types, and locally-defined symbols
+  - Removes comments and string literals before analysis
+  - **Known limitations**: False positives in strings/comments, no import resolution, no scope awareness
 
 ### Constants and Limits
 
@@ -65,18 +73,26 @@ mypy ast_index
 
 ### Data Flow
 
-1. **Indexing**: Scan files → Parse with language-specific parsers → Extract symbols/inheritance/refs → Store in SQLite
+1. **Indexing**: Scan files → Parse with language-specific parsers → Extract symbols/inheritance/**references** → Store in SQLite
 2. **Searching**: Query → SearchEngine (3-level strategy) → Return results
-3. **Updates**: Compare file mtimes → Parse changed files → Update database incrementally
+3. **References**: Query symbol name → Database lookup in `refs` table → Return all usages with context
+4. **Updates**: Compare file mtimes → Parse changed files → Update database incrementally
 
 ### Language Parsers
 
 All parsers follow the same pattern:
 - Parse using tree-sitter grammar
-- Extract: classes, functions, methods, interfaces, inheritance relationships
+- Extract: classes, functions, methods, interfaces, inheritance relationships, **references**
 - Return `ParsedFile` with symbols, inheritances, and references
+- Each parser calls `extract_references()` method (inherited from `BaseParser`) to find symbol usages
 
 **Parser Registry**: Use `BaseParser.get_parser(language)` to get the appropriate parser class.
+
+**References Extraction**:
+- Handled by `ast_index/references.py` module
+- Called automatically by all parsers during indexing
+- Language-specific keywords and standard types defined in `ast_index/reference_keywords.py`
+- Can be overridden per parser for language-specific optimizations
 
 ### Testing
 
@@ -89,3 +105,54 @@ All parsers follow the same pattern:
 - Project detection via `project_detection.py` using marker files (.csproj, package.json, etc.)
 - Config file: `.ast-index.yaml` in project root (optional)
 - Supports custom includes/excludes and language overrides
+
+## References/Usages Implementation Details
+
+The references extraction system uses a **regex-based approach** with these characteristics:
+
+### Architecture
+
+```
+BaseParser.extract_references() (default implementation)
+    ↓
+extract_references_universal() (ast_index/references.py)
+    ↓
+1. strip_comments() - Remove comments
+2. remove_string_literals() - Replace string literals with spaces
+3. Extract identifiers using regex patterns:
+   - CamelCase types: \b([A-Z][a-zA-Z0-9_$]*)\b
+   - Function calls: \b([a-z][a-zA-Z0-9_$]*)\s*\(
+4. Filter out exclusions via is_excluded_symbol()
+5. Return list of Reference objects with context
+```
+
+### Filtering Logic
+
+Symbols are excluded if they match:
+- Language keywords (if, else, while, return, etc.)
+- Standard library types (String, List, int, str, etc.)
+- Locally-defined symbols in the same file
+- Import/using/package statements
+
+### Performance Optimizations
+
+- Cached regex patterns (module-level)
+- Skips lines > 2000 characters (minified code)
+- Deduplicates references using set
+- Context limited to 500 characters
+
+### Accuracy Considerations
+
+**Works well for:**
+- Finding type references (UserRepository, IUserService)
+- Finding method/function calls (getData(), handleClick())
+- Quick approximations of symbol usage
+
+**Known limitations:**
+- No import resolution → may find usages of different symbols with same name
+- No scope awareness → doesn't distinguish between local/remote symbols
+- False positives in strings/comments (partially mitigated)
+- False negatives for snake_case without calls
+- Doesn't understand overload resolution or inheritance hierarchies
+
+For exact semantic analysis, consider LSP-based tools or compiler APIs.

@@ -44,6 +44,7 @@ class Reference:
     ref_line: int
     ref_col: int
     ref_kind: str
+    context: Optional[str] = None
 
 
 @dataclass

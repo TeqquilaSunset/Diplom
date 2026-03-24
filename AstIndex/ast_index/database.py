@@ -73,7 +73,8 @@ class Database:
                 ref_file TEXT NOT NULL,
                 ref_line INTEGER NOT NULL,
                 ref_col INTEGER NOT NULL,
-                ref_kind TEXT NOT NULL
+                ref_kind TEXT NOT NULL,
+                context TEXT
             );
             
             CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name);
@@ -224,8 +225,8 @@ class Database:
     def insert_reference(self, reference: Reference) -> None:
         self._conn.execute(
             """
-            INSERT INTO refs (symbol_name, symbol_file, ref_file, ref_line, ref_col, ref_kind)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO refs (symbol_name, symbol_file, ref_file, ref_line, ref_col, ref_kind, context)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 reference.symbol_name,
@@ -234,6 +235,7 @@ class Database:
                 reference.ref_line,
                 reference.ref_col,
                 reference.ref_kind,
+                reference.context,
             ),
         )
 

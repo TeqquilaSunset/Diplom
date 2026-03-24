@@ -42,11 +42,19 @@ class CSharpParser(BaseParser):
 
         self._walk_tree(root, content, str(file_path), symbols, inheritances)
 
+        # Extract references using the universal method
+        content_str = content.decode("utf-8", errors="replace")
+        references = self.extract_references(
+            content=content_str,
+            file_path=str(file_path),
+            defined_symbols=symbols
+        )
+
         return ParsedFile(
             file_info=file_info,
             symbols=symbols,
             inheritances=inheritances,
-            references=[],
+            references=references,
         )
 
     def _walk_tree(

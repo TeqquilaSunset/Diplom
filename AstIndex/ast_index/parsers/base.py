@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Type, Optional
 
 from ..models import ParsedFile, Symbol, Inheritance, Reference
+from ..references import extract_references_universal
 
 
 class BaseParser(ABC):
@@ -38,6 +39,34 @@ class BaseParser(ABC):
     def can_parse(self, file_path: Path) -> bool:
         """Check if this parser can handle the file."""
         pass
+
+    def extract_references(
+        self,
+        content: str,
+        file_path: str,
+        defined_symbols: List[Symbol]
+    ) -> List[Reference]:
+        """
+        Извлечь ссылки на символы (usages).
+
+        По умолчанию использует универсальный regex метод.
+        Может быть переопределён в subclass для языковой специфики.
+
+        Args:
+            content: Исходный код
+            file_path: Путь к файлу
+            defined_symbols: Список определённых символов
+
+        Returns:
+            Список найденных ссылок
+        """
+        defined_names = {sym.name for sym in defined_symbols}
+        return extract_references_universal(
+            content=content,
+            file_path=file_path,
+            language=self.language,
+            defined_symbols=defined_names
+        )
 
     def _get_text(self, node, source: bytes) -> str:
         """Get text content of a node."""

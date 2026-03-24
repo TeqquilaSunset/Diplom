@@ -117,14 +117,36 @@ def search_class(name: str, root: str, format: str, limit: int):
 @click.option("--root", type=click.Path(exists=True), default=".", help="Project root directory")
 @click.option("--format", type=click.Choice(["text", "json"]), default="text", help="Output format")
 @click.option("--limit", type=int, default=100, help="Maximum results")
-def usages(symbol: str, root: str, format: str, limit: int):
+@click.option("--show-context", is_flag=True, help="Show context of each reference")
+@click.option("--file", type=str, help="Filter results by file path")
+def usages(symbol: str, root: str, format: str, limit: int, show_context: bool, file: str):
     """Find all usages of a symbol."""
     config = load_config(Path(root))
 
     with SearchEngine(config=config) as engine:
         results = engine.search_usages(symbol, limit=limit)
 
-    output_result(results, format, f"Usages of {symbol}")
+        # Filter by file if specified
+        if file:
+            results = [r for r in results if r.get("ref_file", "").endswith(file)]
+
+    if format == "json":
+        output_result(results, format, f"Usages of {symbol}")
+    elif show_context:
+        # Custom output with context
+        if not results:
+            click.echo(f"No usages found for {symbol}")
+            return
+
+        click.echo(f"Usages of {symbol} ({len(results)} found):")
+        click.echo()
+        for ref in results:
+            click.echo(f"  {ref['ref_file']}:{ref['ref_line']}")
+            if ref.get('context'):
+                click.echo(f"    {ref['context']}")
+            click.echo()
+    else:
+        output_result(results, format, f"Usages of {symbol}")
 
 
 @cli.command()
