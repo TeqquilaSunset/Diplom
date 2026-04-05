@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Dict, Set
 from pathlib import Path
 
 
@@ -53,3 +53,21 @@ class ParsedFile:
     symbols: List[Symbol] = field(default_factory=list)
     inheritances: List[Inheritance] = field(default_factory=list)
     references: List[Reference] = field(default_factory=list)
+
+
+@dataclass
+class UsingDirective:
+    """Представляет using директиву в C# файле."""
+    file_path: str
+    alias: Optional[str] = None      # для using App = MyNamespace.App
+    namespace: str = ""              # System.Collections.Generic
+    is_static: bool = False          # для using static Math
+
+
+@dataclass
+class NamespaceMapping:
+    """Картирование namespace для файла."""
+    file_path: str
+    aliases: Dict[str, str] = field(default_factory=dict)    # {alias: namespace}
+    imports: Set[str] = field(default_factory=set)           # {namespace}
+    static_imports: Set[str] = field(default_factory=set)    # {static_type}
