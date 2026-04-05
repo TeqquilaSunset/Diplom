@@ -113,6 +113,20 @@ AST Index includes a **usages** command that finds where symbols are referenced 
 - ✅ Removes comments and string literals from search
 - ✅ Shows context lines for each reference
 
+### C# Enhancements
+
+For C# projects, AST Index provides enhanced reference extraction:
+
+- ✅ **Using Directives Analysis**: Extracts and stores `using` statements (System, System.Collections.Generic, etc.)
+- ✅ **Generic Types**: Extracts references to generic types like `List<T>`, `Dictionary<K,V>`
+- ✅ **Context-Aware Filtering**: Excludes symbols from XML documentation (`/// <summary>`), attributes (`[Obsolete]`), and string interpolation (`$"{var}"`)
+- ✅ **LINQ Extension Methods**: Identifies common LINQ methods (`Where`, `Select`, `ToList`, etc.)
+
+**Show using directives for a C# file:**
+```bash
+ast-index usings Models/UserRepository.cs
+```
+
 ### Known Limitations
 
 The regex-based approach has some limitations:

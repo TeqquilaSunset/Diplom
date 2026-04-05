@@ -54,9 +54,10 @@ mypy ast_index
   3. Fuzzy search via LIKE (LIKE '%Symbol%')
 
 - **CLI** (`ast_index/cli.py`): Click-based command interface
-  - Commands: index, update, rebuild, search, class, usages, inheritance, stats
+  - Commands: index, update, rebuild, search, class, usages, usings, inheritance, stats
   - All commands support `--format json` for AI integration
   - `usages` command supports `--show-context` and `--file` options
+  - **`usings` command** (NEW): Show using directives for C# files with `--format text|json`
 
 - **References Extraction** (`ast_index/references.py`): Regex-based symbol usage tracking
   - Universal method works across all supported languages
@@ -64,6 +65,36 @@ mypy ast_index
   - Filters keywords, standard types, and locally-defined symbols
   - Removes comments and string literals before analysis
   - **Known limitations**: False positives in strings/comments, no import resolution, no scope awareness
+
+### C# Parser Enhancements
+
+**C#-specific improvements** for enhanced reference extraction:
+
+- **Using Directives** (`ast_index/namespace_resolution.py`):
+  - Extracts and stores `using` statements in database
+  - Supports: regular using (`using System;`), static imports (`using static System.Math;`), aliases (`using App = MyNamespace.App;`)
+  - Stored in `usings` table for cross-file analysis
+
+- **Generic Types** (`ast_index/generic_parser.py`):
+  - Extracts references to generic types like `List<T>`, `Dictionary<K,V>`
+  - Handles nested generics: `List<List<int>>`, `Dictionary<string, List<T>>>`
+  - Returns all type parameters as reference candidates
+
+- **Context Filters** (`ast_index/context_filters.py`):
+  - Excludes symbols from XML documentation (`/// <summary>`)
+  - Excludes symbols from attributes (`[Obsolete("Do not use")]`)
+  - Excludes symbols from string interpolation (`$"{user.Name}"`)
+  - Identifies LINQ extension methods (`Where`, `Select`, `ToList`, etc.)
+
+- **Enhanced CSharpParser** (`ast_index/parsers/csharp.py`):
+  - Overrides `extract_references()` with C#-specific logic
+  - Integrates all enhancement modules
+  - Returns `NamespaceMapping` in `ParsedFile`
+
+- **CLI usings command**: View using directives for C# files
+  ```bash
+  ast-index usings Models/UserRepository.cs
+  ```
 
 ### Constants and Limits
 
