@@ -84,6 +84,18 @@ class Database:
             CREATE INDEX IF NOT EXISTS idx_inheritance_parent ON inheritance(parent_symbol);
             CREATE INDEX IF NOT EXISTS idx_refs_symbol ON refs(symbol_name);
             CREATE INDEX IF NOT EXISTS idx_refs_file ON refs(ref_file);
+
+            CREATE TABLE IF NOT EXISTS usings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_path TEXT NOT NULL,
+                alias TEXT,
+                namespace TEXT NOT NULL,
+                is_static INTEGER DEFAULT 0,
+                FOREIGN KEY (file_path) REFERENCES files(path) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_usings_file ON usings(file_path);
+            CREATE INDEX IF NOT EXISTS idx_usings_namespace ON usings(namespace);
         """)
 
     def _create_triggers(self):
@@ -133,6 +145,7 @@ class Database:
 
     def delete_file(self, path: str) -> None:
         self._conn.execute("DELETE FROM files WHERE path = ?", (path,))
+        self._conn.execute("DELETE FROM usings WHERE file_path = ?", (path,))
 
     def get_all_files(self) -> List[Dict[str, Any]]:
         return [dict(row) for row in self._conn.execute("SELECT * FROM files")]
@@ -279,3 +292,88 @@ class Database:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def save_usings(self, file_path: str, namespace_mapping):
+        """
+        Сохранить using директивы для файла.
+
+        Args:
+            file_path: Путь к файлу
+            namespace_mapping: NamespaceMapping объект
+        """
+        from .models import NamespaceMapping
+
+        cursor = self._conn.cursor()
+
+        # Удалить старые записи
+        cursor.execute("DELETE FROM usings WHERE file_path = ?", (file_path,))
+
+        # Вставить новые
+        for namespace in namespace_mapping.imports:
+            cursor.execute(
+                "INSERT INTO usings (file_path, namespace, is_static) VALUES (?, ?, 0)",
+                (file_path, namespace)
+            )
+
+        for static_type in namespace_mapping.static_imports:
+            cursor.execute(
+                "INSERT INTO usings (file_path, namespace, is_static) VALUES (?, ?, 1)",
+                (file_path, static_type)
+            )
+
+        for alias, target_ns in namespace_mapping.aliases.items():
+            cursor.execute(
+                "INSERT INTO usings (file_path, alias, namespace, is_static) VALUES (?, ?, ?, 0)",
+                (file_path, alias, target_ns)
+            )
+
+        self._conn.commit()
+
+    def get_usings_for_file(self, file_path: str):
+        """
+        Получить using директивы для файла.
+
+        Args:
+            file_path: Путь к файлу
+
+        Returns:
+            NamespaceMapping объект
+        """
+        from .models import NamespaceMapping
+
+        cursor = self._conn.cursor()
+        cursor.execute(
+            "SELECT alias, namespace, is_static FROM usings WHERE file_path = ?",
+            (file_path,)
+        )
+
+        aliases = {}
+        imports = set()
+        static_imports = set()
+
+        for row in cursor.fetchall():
+            alias, namespace, is_static = row
+            if alias:
+                aliases[alias] = namespace
+            if is_static:
+                static_imports.add(namespace)
+            else:
+                imports.add(namespace)
+
+        return NamespaceMapping(
+            file_path=file_path,
+            aliases=aliases,
+            imports=imports,
+            static_imports=static_imports
+        )
+
+    def delete_usings_for_file(self, file_path: str):
+        """
+        Удалить using директивы для файла.
+
+        Args:
+            file_path: Путь к файлу
+        """
+        cursor = self._conn.cursor()
+        cursor.execute("DELETE FROM usings WHERE file_path = ?", (file_path,))
+        self._conn.commit()
