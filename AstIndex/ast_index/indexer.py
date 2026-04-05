@@ -209,6 +209,10 @@ class Indexer:
 
         self.db.insert_references(parsed.references)
 
+        # Save usings if available (C# specific)
+        if hasattr(parsed, 'namespace_mapping') and parsed.namespace_mapping:
+            self.db.save_usings(file_info.path, parsed.namespace_mapping)
+
     def _delete_file(self, path: str):
         self.db.delete_symbols_for_file(path)
         self.db.delete_inheritance_for_file(path)

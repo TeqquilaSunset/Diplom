@@ -1,13 +1,13 @@
 from pathlib import Path
-from typing import Optional
+
 import tree_sitter_c_sharp as tscs
 from tree_sitter import Language, Parser
 
-from .base import BaseParser
-from ..models import ParsedFile, FileInfo, Symbol, Inheritance, Reference
-from ..namespace_resolution import extract_using_directives
+from ..context_filters import should_exclude_context
 from ..generic_parser import extract_generic_types, get_generic_reference_candidates
-from ..context_filters import should_exclude_context, filter_extension_methods
+from ..models import FileInfo, Inheritance, ParsedFile, Reference, Symbol
+from ..namespace_resolution import extract_using_directives
+from .base import BaseParser
 
 
 class CSharpParser(BaseParser):
@@ -15,8 +15,8 @@ class CSharpParser(BaseParser):
     extensions = [".cs"]
 
     def __init__(self):
-        self._parser: Optional[Parser] = None
-        self._language: Optional[Language] = None
+        self._parser: Parser | None = None
+        self._language: Language | None = None
 
     def _ensure_parser(self):
         if self._parser is None:
@@ -62,6 +62,7 @@ class CSharpParser(BaseParser):
             symbols=symbols,
             inheritances=inheritances,
             references=references,
+            namespace_mapping=namespace_mapping,
         )
 
     def _walk_tree(
@@ -323,7 +324,7 @@ class CSharpParser(BaseParser):
             for child in body.children:
                 self._walk_tree(child, source, file_path, symbols, inheritances, parent, new_scope)
 
-    def _get_identifier_name(self, node, source: bytes) -> Optional[str]:
+    def _get_identifier_name(self, node, source: bytes) -> str | None:
         for child in node.children:
             if child.type == "identifier":
                 return self._get_text(child, source)

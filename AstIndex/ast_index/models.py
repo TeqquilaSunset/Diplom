@@ -53,6 +53,7 @@ class ParsedFile:
     symbols: List[Symbol] = field(default_factory=list)
     inheritances: List[Inheritance] = field(default_factory=list)
     references: List[Reference] = field(default_factory=list)
+    namespace_mapping: Optional['NamespaceMapping'] = None  # NamespaceMapping for C#
 
 
 @dataclass
