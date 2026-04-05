@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Optional
+
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
+from ..models import FileInfo, Inheritance, ParsedFile, Symbol
 from .base import BaseParser
-from ..models import ParsedFile, FileInfo, Symbol, Inheritance, Reference
 
 
 class PythonParser(BaseParser):
@@ -12,8 +12,8 @@ class PythonParser(BaseParser):
     extensions = [".py", ".pyw"]
 
     def __init__(self):
-        self._parser: Optional[Parser] = None
-        self._language: Optional[Language] = None
+        self._parser: Parser | None = None
+        self._language: Language | None = None
 
     def _ensure_parser(self):
         if self._parser is None:
@@ -156,7 +156,7 @@ class PythonParser(BaseParser):
             )
         )
 
-    def _get_name(self, node, source: bytes) -> Optional[str]:
+    def _get_name(self, node, source: bytes) -> str | None:
         """Get the name of a definition node."""
         for child in node.children:
             if child.type == "identifier":
@@ -204,7 +204,7 @@ class PythonParser(BaseParser):
 
         return " ".join(parts)
 
-    def _get_docstring(self, node, source: bytes) -> Optional[str]:
+    def _get_docstring(self, node, source: bytes) -> str | None:
         """Extract docstring from a node's body."""
         body = self._find_child_by_type(node, "block")
         if not body:

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Set
-from pathlib import Path
+from typing import Optional
 
 
 @dataclass
@@ -21,10 +20,10 @@ class Symbol:
     line_end: int
     col_start: int = 0
     col_end: int = 0
-    signature: Optional[str] = None
-    docstring: Optional[str] = None
-    parent: Optional[str] = None
-    scope: Optional[str] = None
+    signature: str | None = None
+    docstring: str | None = None
+    parent: str | None = None
+    scope: str | None = None
 
 
 @dataclass
@@ -32,7 +31,7 @@ class Inheritance:
     child_symbol: str
     child_file: str
     parent_symbol: str
-    parent_file: Optional[str]
+    parent_file: str | None
     kind: str
 
 
@@ -44,15 +43,15 @@ class Reference:
     ref_line: int
     ref_col: int
     ref_kind: str
-    context: Optional[str] = None
+    context: str | None = None
 
 
 @dataclass
 class ParsedFile:
     file_info: FileInfo
-    symbols: List[Symbol] = field(default_factory=list)
-    inheritances: List[Inheritance] = field(default_factory=list)
-    references: List[Reference] = field(default_factory=list)
+    symbols: list[Symbol] = field(default_factory=list)
+    inheritances: list[Inheritance] = field(default_factory=list)
+    references: list[Reference] = field(default_factory=list)
     namespace_mapping: Optional['NamespaceMapping'] = None  # NamespaceMapping for C#
 
 
@@ -60,7 +59,7 @@ class ParsedFile:
 class UsingDirective:
     """Представляет using директиву в C# файле."""
     file_path: str
-    alias: Optional[str] = None      # для using App = MyNamespace.App
+    alias: str | None = None      # для using App = MyNamespace.App
     namespace: str = ""              # System.Collections.Generic
     is_static: bool = False          # для using static Math
 
@@ -69,6 +68,6 @@ class UsingDirective:
 class NamespaceMapping:
     """Картирование namespace для файла."""
     file_path: str
-    aliases: Dict[str, str] = field(default_factory=dict)    # {alias: namespace}
-    imports: Set[str] = field(default_factory=set)           # {namespace}
-    static_imports: Set[str] = field(default_factory=set)    # {static_type}
+    aliases: dict[str, str] = field(default_factory=dict)    # {alias: namespace}
+    imports: set[str] = field(default_factory=set)           # {namespace}
+    static_imports: set[str] = field(default_factory=set)    # {static_type}

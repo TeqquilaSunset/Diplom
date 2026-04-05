@@ -2,7 +2,6 @@
 Модуль для анализа generic типов в C#.
 """
 import re
-from typing import List
 from dataclasses import dataclass
 
 
@@ -10,13 +9,13 @@ from dataclasses import dataclass
 class GenericType:
     """Представляет generic тип."""
     base_type: str           # List, Dictionary, etc.
-    type_arguments: List[str]  # [string, int] for Dictionary<string, int>
+    type_arguments: list[str]  # [string, int] for Dictionary<string, int>
     full_name: str           # List<string>
 
 
 
 
-def _find_generic_types_manually(content: str) -> List[tuple]:
+def _find_generic_types_manually(content: str) -> list[tuple]:
     """Manually find generic types with proper nested handling."""
     # Remove spaces around angle brackets to handle mixed spacing
     content = re.sub(r'\s*<\s*', '<', content)
@@ -72,7 +71,7 @@ def extract_generic_types(
     content: str,
     file_path: str,
     line_number: int
-) -> List[GenericType]:
+) -> list[GenericType]:
     """
     Извлечь generic типы из строки кода.
 
@@ -110,7 +109,7 @@ def extract_generic_types(
     return generics
 
 
-def _parse_type_arguments(type_args_str: str) -> List[str]:
+def _parse_type_arguments(type_args_str: str) -> list[str]:
     """
     Распарсить строку type arguments.
 
@@ -147,7 +146,7 @@ def _parse_type_arguments(type_args_str: str) -> List[str]:
 
 def get_generic_reference_candidates(
     generic_type: GenericType
-) -> List[str]:
+) -> list[str]:
     """
     Получить кандидатов в символы для generic типа.
 

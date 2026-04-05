@@ -4,14 +4,10 @@
 Использует regex-based подход с фильтрацией для поиска использований символов.
 """
 
-from typing import Set, List, Optional
 import re
-from dataclasses import dataclass
-from functools import lru_cache
 
 from .models import Reference
 from .reference_keywords import get_keywords, get_standard_types
-
 
 # Module-level cached regex patterns for performance
 _CAMELCASE_PATTERN = None
@@ -277,9 +273,9 @@ def remove_string_literals(content: str) -> str:
 
 def is_excluded_symbol(
     name: str,
-    keywords: Set[str],
-    standard_types: Set[str],
-    defined_symbols: Set[str],
+    keywords: set[str],
+    standard_types: set[str],
+    defined_symbols: set[str],
     line: str = ""
 ) -> bool:
     """
@@ -333,8 +329,8 @@ def extract_references_universal(
     content: str,
     file_path: str,
     language: str,
-    defined_symbols: Set[str]
-) -> List[Reference]:
+    defined_symbols: set[str]
+) -> list[Reference]:
     """
     Универсальный метод извлечения ссылок.
 

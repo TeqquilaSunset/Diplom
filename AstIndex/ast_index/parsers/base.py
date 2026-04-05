@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Type, Optional
 
-from ..models import ParsedFile, Symbol, Inheritance, Reference
+from ..models import ParsedFile, Reference, Symbol
 from ..references import extract_references_universal
 
 
@@ -10,9 +9,9 @@ class BaseParser(ABC):
     """Abstract base class for language parsers."""
 
     language: str = ""
-    extensions: List[str] = []
+    extensions: list[str] = []
 
-    _registry: Dict[str, Type["BaseParser"]] = {}
+    _registry: dict[str, type["BaseParser"]] = {}
 
     def __init_subclass__(cls, **kwargs):
         """Register subclasses automatically."""
@@ -21,12 +20,12 @@ class BaseParser(ABC):
             cls._registry[cls.language] = cls
 
     @classmethod
-    def get_parser(cls, language: str) -> Optional[Type["BaseParser"]]:
+    def get_parser(cls, language: str) -> type["BaseParser"] | None:
         """Get parser class for a language."""
         return cls._registry.get(language)
 
     @classmethod
-    def get_supported_languages(cls) -> List[str]:
+    def get_supported_languages(cls) -> list[str]:
         """Get list of supported languages."""
         return list(cls._registry.keys())
 
@@ -44,8 +43,8 @@ class BaseParser(ABC):
         self,
         content: str,
         file_path: str,
-        defined_symbols: List[Symbol]
-    ) -> List[Reference]:
+        defined_symbols: list[Symbol]
+    ) -> list[Reference]:
         """
         Извлечь ссылки на символы (usages).
 

@@ -1,27 +1,27 @@
-from pathlib import Path
-from typing import Optional, List, Dict, Any
 import time
+from pathlib import Path
+from typing import Any
 
 from .config import Config, load_config
-from .database import Database
-from .parsers import get_parser
-from .utils.file_utils import scan_files, djb2_hash, get_file_info
-from .utils.logging import get_logger
 from .constants import BATCH_SIZE
+from .database import Database
 from .models import ParsedFile
+from .parsers import get_parser
+from .utils.file_utils import djb2_hash, get_file_info, scan_files
+from .utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class Indexer:
-    def __init__(self, config: Optional[Config] = None, root: Optional[Path] = None):
+    def __init__(self, config: Config | None = None, root: Path | None = None):
         if config:
             self.config = config
         else:
             self.config = load_config(root or Path.cwd())
 
         self.db = Database(self.config.db_path)
-        self._parsers: Dict[str, Any] = {}
+        self._parsers: dict[str, Any] = {}
 
     def _get_parser(self, language: str):
         if language not in self._parsers:
@@ -30,7 +30,7 @@ class Indexer:
                 self._parsers[language] = parser_cls()
         return self._parsers.get(language)
 
-    def index(self) -> Dict[str, int]:
+    def index(self) -> dict[str, int]:
         logger.info(f"Starting full index of {self.config.root}")
         start_time = time.time()
 
@@ -42,7 +42,7 @@ class Indexer:
             "errors": 0,
         }
 
-        files_batch: List[tuple] = []
+        files_batch: list[tuple] = []
 
         for file_path, language in scan_files(
             self.config.root,
@@ -68,7 +68,7 @@ class Indexer:
 
         return stats
 
-    def update(self) -> Dict[str, int]:
+    def update(self) -> dict[str, int]:
         logger.info(f"Starting incremental update of {self.config.root}")
         start_time = time.time()
 
@@ -84,7 +84,7 @@ class Indexer:
         existing_files = {f["path"]: f for f in self.db.get_all_files()}
         current_files = set()
 
-        files_to_process: List[tuple] = []
+        files_to_process: list[tuple] = []
 
         for file_path, language in scan_files(
             self.config.root,
@@ -107,7 +107,7 @@ class Indexer:
             self._delete_file(path_str)
             stats["files_deleted"] += 1
 
-        batch: List[tuple] = []
+        batch: list[tuple] = []
         for item in files_to_process:
             if len(item) == 3:
                 file_path, language, change_type = item
@@ -139,14 +139,14 @@ class Indexer:
 
         return stats
 
-    def rebuild(self) -> Dict[str, int]:
+    def rebuild(self) -> dict[str, int]:
         logger.info(f"Rebuilding index for {self.config.root}")
 
         self._clear_all()
 
         return self.index()
 
-    def _process_batch(self, files: List[tuple]) -> Dict[str, int]:
+    def _process_batch(self, files: list[tuple]) -> dict[str, int]:
         stats = {
             "files_indexed": 0,
             "symbols_indexed": 0,
@@ -171,7 +171,7 @@ class Indexer:
 
         return stats
 
-    def _parse_file(self, file_path: Path, language: str) -> Optional[ParsedFile]:
+    def _parse_file(self, file_path: Path, language: str) -> ParsedFile | None:
         parser = self._get_parser(language)
         if not parser:
             logger.warning(f"No parser for language: {language}")
@@ -224,7 +224,7 @@ class Indexer:
         for f in all_files:
             self._delete_file(f["path"])
 
-    def _merge_stats(self, stats: Dict[str, int], batch_stats: Dict[str, int]):
+    def _merge_stats(self, stats: dict[str, int], batch_stats: dict[str, int]):
         for key, value in batch_stats.items():
             if key in stats:
                 stats[key] += value

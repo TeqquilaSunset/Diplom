@@ -2,8 +2,6 @@
 Контекст-зависимая фильтрация ссылок для C#.
 """
 import re
-from typing import Set
-
 
 # C#-специфичные паттерны для фильтрации
 _CSHARP_XML_DOC_PATTERN = re.compile(r'///\s*.*')
@@ -69,7 +67,7 @@ def should_exclude_context(line: str, col_start: int, symbol_name: str) -> bool:
 def filter_extension_methods(
     symbol_name: str,
     line: str,
-    known_extensions: Set[str]
+    known_extensions: set[str]
 ) -> bool:
     """
     Фильтрация extension methods.

@@ -1,10 +1,7 @@
 """Parser modules for different programming languages."""
 
+from . import csharp, javascript, python, typescript
 from .base import BaseParser
-from . import python
-from . import csharp
-from . import javascript
-from . import typescript
 
 
 def get_parser(language: str):

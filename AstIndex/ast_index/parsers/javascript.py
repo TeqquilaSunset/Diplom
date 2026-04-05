@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Optional
+
 import tree_sitter_javascript as tsjs
 from tree_sitter import Language, Parser
 
+from ..models import FileInfo, Inheritance, ParsedFile, Symbol
 from .base import BaseParser
-from ..models import ParsedFile, FileInfo, Symbol, Inheritance, Reference
 
 
 class JavaScriptParser(BaseParser):
@@ -12,8 +12,8 @@ class JavaScriptParser(BaseParser):
     extensions = [".js", ".jsx", ".mjs", ".cjs"]
 
     def __init__(self):
-        self._parser: Optional[Parser] = None
-        self._language: Optional[Language] = None
+        self._parser: Parser | None = None
+        self._language: Language | None = None
 
     def _ensure_parser(self):
         if self._parser is None:
@@ -226,13 +226,13 @@ class JavaScriptParser(BaseParser):
                 )
             )
 
-    def _get_identifier_name(self, node, source: bytes) -> Optional[str]:
+    def _get_identifier_name(self, node, source: bytes) -> str | None:
         for child in node.children:
             if child.type == "identifier":
                 return self._get_text(child, source)
         return None
 
-    def _get_property_name(self, node, source: bytes) -> Optional[str]:
+    def _get_property_name(self, node, source: bytes) -> str | None:
         for child in node.children:
             if child.type == "property_identifier":
                 return self._get_text(child, source)

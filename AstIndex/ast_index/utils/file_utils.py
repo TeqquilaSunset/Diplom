@@ -1,7 +1,7 @@
-import os
 import fnmatch
+import os
+from collections.abc import Iterator
 from pathlib import Path
-from typing import List, Iterator, Optional, Tuple
 
 from ..constants import MAX_FILE_SIZE
 from ..models import FileInfo
@@ -28,7 +28,7 @@ def get_file_info(path: Path, language: str) -> FileInfo:
     )
 
 
-def should_skip_file(path: Path, excludes: List[str]) -> bool:
+def should_skip_file(path: Path, excludes: list[str]) -> bool:
     """Check if file should be skipped based on excludes."""
     path_str = str(path)
     path_parts = path.parts
@@ -44,7 +44,7 @@ def should_skip_file(path: Path, excludes: List[str]) -> bool:
     return False
 
 
-def get_language_from_extension(path: Path) -> Optional[str]:
+def get_language_from_extension(path: Path) -> str | None:
     """Determine language from file extension."""
     ext_map = {
         ".py": "python",
@@ -58,9 +58,9 @@ def get_language_from_extension(path: Path) -> Optional[str]:
 
 def scan_files(
     root: Path,
-    includes: List[str],
-    excludes: List[str],
-) -> Iterator[Tuple[Path, str]]:
+    includes: list[str],
+    excludes: list[str],
+) -> Iterator[tuple[Path, str]]:
     """Scan directory for files matching patterns."""
     if isinstance(root, str):
         root = Path(root)

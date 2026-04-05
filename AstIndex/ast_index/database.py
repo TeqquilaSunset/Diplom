@@ -1,9 +1,8 @@
 import sqlite3
-from pathlib import Path
-from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
+from typing import Any
 
-from .models import FileInfo, Symbol, Inheritance, Reference
+from .models import FileInfo, Inheritance, Reference, Symbol
 
 
 class Database:
@@ -11,7 +10,7 @@ class Database:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._init_db()
 
     def _init_db(self):
@@ -139,7 +138,7 @@ class Database:
             ),
         )
 
-    def get_file(self, path: str) -> Optional[Dict[str, Any]]:
+    def get_file(self, path: str) -> dict[str, Any] | None:
         row = self._conn.execute("SELECT * FROM files WHERE path = ?", (path,)).fetchone()
         return dict(row) if row else None
 
@@ -147,7 +146,7 @@ class Database:
         self._conn.execute("DELETE FROM files WHERE path = ?", (path,))
         self._conn.execute("DELETE FROM usings WHERE file_path = ?", (path,))
 
-    def get_all_files(self) -> List[Dict[str, Any]]:
+    def get_all_files(self) -> list[dict[str, Any]]:
         return [dict(row) for row in self._conn.execute("SELECT * FROM files")]
 
     def insert_symbol(self, symbol: Symbol) -> int:
@@ -173,14 +172,14 @@ class Database:
         )
         return cursor.lastrowid
 
-    def insert_symbols(self, symbols: List[Symbol]) -> None:
+    def insert_symbols(self, symbols: list[Symbol]) -> None:
         for symbol in symbols:
             self.insert_symbol(symbol)
 
     def delete_symbols_for_file(self, file_path: str) -> None:
         self._conn.execute("DELETE FROM symbols WHERE file_path = ?", (file_path,))
 
-    def search_symbols(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def search_symbols(self, query: str, limit: int = 50) -> list[dict[str, Any]]:
         rows = self._conn.execute(
             """
             SELECT s.* FROM symbols s
@@ -193,11 +192,11 @@ class Database:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def get_symbols_by_name(self, name: str) -> List[Dict[str, Any]]:
+    def get_symbols_by_name(self, name: str) -> list[dict[str, Any]]:
         rows = self._conn.execute("SELECT * FROM symbols WHERE name = ?", (name,)).fetchall()
         return [dict(row) for row in rows]
 
-    def get_symbols_by_kind(self, kind: str) -> List[Dict[str, Any]]:
+    def get_symbols_by_kind(self, kind: str) -> list[dict[str, Any]]:
         rows = self._conn.execute("SELECT * FROM symbols WHERE kind = ?", (kind,)).fetchall()
         return [dict(row) for row in rows]
 
@@ -216,20 +215,20 @@ class Database:
             ),
         )
 
-    def insert_inheritances(self, inheritances: List[Inheritance]) -> None:
+    def insert_inheritances(self, inheritances: list[Inheritance]) -> None:
         for inh in inheritances:
             self.insert_inheritance(inh)
 
     def delete_inheritance_for_file(self, file_path: str) -> None:
         self._conn.execute("DELETE FROM inheritance WHERE child_file = ?", (file_path,))
 
-    def get_children(self, parent_symbol: str) -> List[Dict[str, Any]]:
+    def get_children(self, parent_symbol: str) -> list[dict[str, Any]]:
         rows = self._conn.execute(
             "SELECT * FROM inheritance WHERE parent_symbol = ?", (parent_symbol,)
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def get_parents(self, child_symbol: str) -> List[Dict[str, Any]]:
+    def get_parents(self, child_symbol: str) -> list[dict[str, Any]]:
         rows = self._conn.execute(
             "SELECT * FROM inheritance WHERE child_symbol = ?", (child_symbol,)
         ).fetchall()
@@ -252,14 +251,14 @@ class Database:
             ),
         )
 
-    def insert_references(self, references: List[Reference]) -> None:
+    def insert_references(self, references: list[Reference]) -> None:
         for ref in references:
             self.insert_reference(ref)
 
     def delete_refs_for_file(self, file_path: str) -> None:
         self._conn.execute("DELETE FROM refs WHERE ref_file = ?", (file_path,))
 
-    def get_usages(self, symbol_name: str) -> List[Dict[str, Any]]:
+    def get_usages(self, symbol_name: str) -> list[dict[str, Any]]:
         rows = self._conn.execute(
             "SELECT * FROM refs WHERE symbol_name = ?", (symbol_name,)
         ).fetchall()
@@ -270,11 +269,11 @@ class Database:
             "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)", (key, value)
         )
 
-    def get_metadata(self, key: str) -> Optional[str]:
+    def get_metadata(self, key: str) -> str | None:
         row = self._conn.execute("SELECT value FROM metadata WHERE key = ?", (key,)).fetchone()
         return row["value"] if row else None
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         return {
             "files": self._conn.execute("SELECT COUNT(*) FROM files").fetchone()[0],
             "symbols": self._conn.execute("SELECT COUNT(*) FROM symbols").fetchone()[0],
@@ -301,7 +300,6 @@ class Database:
             file_path: Путь к файлу
             namespace_mapping: NamespaceMapping объект
         """
-        from .models import NamespaceMapping
 
         cursor = self._conn.cursor()
 
@@ -378,7 +376,7 @@ class Database:
         cursor.execute("DELETE FROM usings WHERE file_path = ?", (file_path,))
         self._conn.commit()
 
-    def get_references_for_file(self, file_path: str) -> List[Dict[str, Any]]:
+    def get_references_for_file(self, file_path: str) -> list[dict[str, Any]]:
         """
         Получить все ссылки в указанном файле.
 

@@ -1,7 +1,6 @@
 """
 Модуль для разрешения пространств имен в C#.
 """
-from typing import Dict, Set
 import re
 
 from .models import NamespaceMapping

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+
 import yaml
 
 DEFAULT_EXCLUDES = [
@@ -22,10 +22,10 @@ DEFAULT_INCLUDES = ["*.py", "*.cs", "*.js", "*.ts", "*.tsx"]
 @dataclass
 class Config:
     root: Path
-    includes: List[str] = field(default_factory=lambda: DEFAULT_INCLUDES.copy())
-    excludes: List[str] = field(default_factory=lambda: DEFAULT_EXCLUDES.copy())
-    database_path: Optional[str] = None
-    languages: List[str] = field(
+    includes: list[str] = field(default_factory=lambda: DEFAULT_INCLUDES.copy())
+    excludes: list[str] = field(default_factory=lambda: DEFAULT_EXCLUDES.copy())
+    database_path: str | None = None
+    languages: list[str] = field(
         default_factory=lambda: ["python", "csharp", "javascript", "typescript"]
     )
 
@@ -40,7 +40,7 @@ class Config:
         return self.database_path or str(self.root / ".ast-index.db")
 
 
-def find_config_file(start_path: Optional[Path] = None) -> Optional[Path]:
+def find_config_file(start_path: Path | None = None) -> Path | None:
     """Find .ast-index.yaml by traversing up from start_path."""
     if start_path is None:
         start_path = Path.cwd()
@@ -61,7 +61,7 @@ def find_config_file(start_path: Optional[Path] = None) -> Optional[Path]:
     return None
 
 
-def load_config(root: Optional[Path] = None) -> Config:
+def load_config(root: Path | None = None) -> Config:
     """Load configuration from .ast-index.yaml or return defaults."""
     if root is None:
         root = Path.cwd()
@@ -71,7 +71,7 @@ def load_config(root: Optional[Path] = None) -> Config:
     config_file = find_config_file(root)
 
     if config_file:
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             data = yaml.safe_load(f) or {}
 
         config_root = config_file.parent
@@ -86,7 +86,7 @@ def load_config(root: Optional[Path] = None) -> Config:
     return Config(root=root)
 
 
-def save_config(config: Config, path: Optional[Path] = None) -> None:
+def save_config(config: Config, path: Path | None = None) -> None:
     """Save configuration to .ast-index.yaml."""
     if path is None:
         path = config.root / ".ast-index.yaml"

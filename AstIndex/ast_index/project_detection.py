@@ -1,6 +1,5 @@
-from pathlib import Path
-from typing import Optional, List, Set
 from enum import Enum
+from pathlib import Path
 
 
 class ProjectType(Enum):
@@ -27,14 +26,14 @@ PROJECT_MARKERS = {
 }
 
 
-def detect_project_type(path: Optional[Path] = None) -> ProjectType:
+def detect_project_type(path: Path | None = None) -> ProjectType:
     """Detect project type based on marker files in directory."""
     if path is None:
         path = Path.cwd()
     elif isinstance(path, str):
         path = Path(path)
 
-    detected: Set[ProjectType] = set()
+    detected: set[ProjectType] = set()
 
     for project_type, markers in PROJECT_MARKERS.items():
         for marker in markers:
@@ -51,7 +50,7 @@ def detect_project_type(path: Optional[Path] = None) -> ProjectType:
     return ProjectType.MIXED
 
 
-def detect_project_root(start_path: Optional[Path] = None) -> Optional[Path]:
+def detect_project_root(start_path: Path | None = None) -> Path | None:
     """Find project root by traversing up looking for any project marker."""
     if start_path is None:
         start_path = Path.cwd()
@@ -76,7 +75,7 @@ def detect_project_root(start_path: Optional[Path] = None) -> Optional[Path]:
     return None
 
 
-def get_project_languages(path: Optional[Path] = None) -> List[str]:
+def get_project_languages(path: Path | None = None) -> list[str]:
     """Get list of detected languages for a project."""
     project_type = detect_project_type(path)
 

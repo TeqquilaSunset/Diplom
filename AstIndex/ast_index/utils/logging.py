@@ -1,9 +1,8 @@
 import logging
 import sys
-from typing import Optional
 
 
-def setup_logging(level: str = "INFO", log_file: Optional[str] = None) -> None:
+def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
     """Setup logging configuration."""
     log_level = getattr(logging, level.upper(), logging.INFO)
 

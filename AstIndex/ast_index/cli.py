@@ -228,6 +228,7 @@ def init(root: str):
 def usings(file_path: str, root: str, format: str):
     """Показать using директивы для C# файла."""
     from pathlib import Path
+
     from .database import Database
     from .project_detection import detect_project_root
 
