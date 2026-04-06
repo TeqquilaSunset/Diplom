@@ -1,3 +1,3 @@
-"""AST Index - Structural code search using AST analysis with import resolution."""
+"""AST Index - Structural code search using AST analysis with import resolution and parallel indexing."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
