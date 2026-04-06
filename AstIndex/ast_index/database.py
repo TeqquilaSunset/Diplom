@@ -16,6 +16,11 @@ class Database:
     def _init_db(self):
         self._conn = sqlite3.connect(self.db_path, isolation_level=None)
         self._conn.row_factory = sqlite3.Row
+
+        # Enable WAL mode for better concurrency
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
+
         self._create_tables()
         self._create_triggers()
 
@@ -280,6 +285,16 @@ class Database:
             "inheritances": self._conn.execute("SELECT COUNT(*) FROM inheritance").fetchone()[0],
             "references": self._conn.execute("SELECT COUNT(*) FROM refs").fetchone()[0],
         }
+
+    def _clear_all(self):
+        """Очистить все таблицы базы данных."""
+        self._conn.execute("DELETE FROM symbols")
+        self._conn.execute("DELETE FROM inheritance")
+        self._conn.execute("DELETE FROM refs")
+        self._conn.execute("DELETE FROM files")
+        self._conn.execute("DELETE FROM usings")
+        self._conn.execute("DELETE FROM metadata")
+        self._conn.commit()
 
     def close(self):
         if self._conn:

@@ -1,3 +1,4 @@
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,13 @@ logger = get_logger(__name__)
 
 
 class Indexer:
-    def __init__(self, config: Config | None = None, root: Path | None = None):
+    def __init__(
+        self,
+        config: Config | None = None,
+        root: Path | None = None,
+        use_parallel: bool = True,
+        max_workers: int | None = None
+    ):
         if config:
             self.config = config
         else:
@@ -22,6 +29,8 @@ class Indexer:
 
         self.db = Database(self.config.db_path)
         self._parsers: dict[str, Any] = {}
+        self.use_parallel = use_parallel  # Use parallel indexing by default
+        self.max_workers = max_workers or os.cpu_count() or 4
 
     def _get_parser(self, language: str):
         if language not in self._parsers:
@@ -31,7 +40,15 @@ class Indexer:
         return self._parsers.get(language)
 
     def index(self) -> dict[str, int]:
-        logger.info(f"Starting full index of {self.config.root}")
+        """Index project with optional parallel processing."""
+        if self.use_parallel:
+            return self.index_parallel()
+        else:
+            return self.index_sequential()
+
+    def index_sequential(self) -> dict[str, int]:
+        """Sequential indexing (original implementation)."""
+        logger.info(f"Starting full index of {self.config.root} (sequential)")
         start_time = time.time()
 
         stats = {
@@ -65,6 +82,46 @@ class Indexer:
 
         elapsed = time.time() - start_time
         logger.info(f"Indexing complete in {elapsed:.2f}s: {stats}")
+
+        return stats
+
+    def index_parallel(self) -> dict[str, int]:
+        """Parallel indexing using ThreadPoolExecutor."""
+        from .parallel_indexer import ParallelIndexer
+
+        logger.info(f"Starting full index of {self.config.root} (parallel)")
+        start_time = time.time()
+
+        # Collect all files
+        files_list = list(scan_files(
+            self.config.root,
+            self.config.includes,
+            self.config.excludes,
+        ))
+
+        # Progress callback
+        def progress_callback(current: int, total: int):
+            if total > 0:
+                percentage = (current / total) * 100
+                if current % 100 == 0 or current == total:  # Log every 100 files
+                    logger.info(f"Progress: {current}/{total} files ({percentage:.1f}%)")
+
+        # Create parallel indexer
+        parallel_indexer = ParallelIndexer(
+            config=self.config,
+            max_workers=self.max_workers,
+            progress_callback=progress_callback
+        )
+
+        # Index files in parallel
+        stats = parallel_indexer.index_files_parallel(files_list)
+
+        # Update metadata
+        self.db.set_metadata("last_index_time", str(time.time()))
+        self.db.set_metadata("schema_version", "1")
+
+        elapsed = time.time() - start_time
+        logger.info(f"Parallel indexing complete in {elapsed:.2f}s: {stats}")
 
         return stats
 

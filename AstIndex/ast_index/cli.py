@@ -45,11 +45,21 @@ def cli():
 @cli.command()
 @click.option("--root", type=click.Path(exists=True), default=".", help="Project root directory")
 @click.option("--format", type=click.Choice(["text", "json"]), default="text", help="Output format")
-def index(root: str, format: str):
+@click.option("--jobs", "-j", type=int, default=None, help="Number of parallel jobs (default: CPU count)")
+@click.option("--no-parallel", is_flag=True, help="Disable parallel processing")
+def index(root: str, format: str, jobs: int | None, no_parallel: bool):
     """Index the project."""
     config = load_config(Path(root))
 
-    with Indexer(config=config) as indexer:
+    # Determine if parallel processing should be used
+    use_parallel = not no_parallel
+
+    # Prepare indexer kwargs
+    indexer_kwargs = {"config": config, "use_parallel": use_parallel}
+    if jobs and use_parallel:
+        indexer_kwargs["max_workers"] = jobs
+
+    with Indexer(**indexer_kwargs) as indexer:
         stats = indexer.index()
 
     output_result(stats, format, "Indexing complete")
