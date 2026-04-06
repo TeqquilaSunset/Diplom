@@ -54,10 +54,14 @@ mypy ast_index
   3. Fuzzy search via LIKE (LIKE '%Symbol%')
 
 - **CLI** (`ast_index/cli.py`): Click-based command interface
-  - Commands: index, update, rebuild, search, class, usages, usings, inheritance, stats
+  - Commands: index, update, rebuild, search, class, usages, usings, inheritance, stats, definition
   - All commands support `--format json` for AI integration
   - `usages` command supports `--show-context` and `--file` options
   - **`usings` command** (NEW): Show using directives for C# files with `--format text|json`
+  - **`definition` command** (NEW): Find symbol definition with import resolution
+    ```bash
+    ast-index definition SYMBOL [--file PATH] [--format text|json]
+    ```
 
 - **References Extraction** (`ast_index/references.py`): Regex-based symbol usage tracking
   - Universal method works across all supported languages
