@@ -2,6 +2,7 @@ from typing import Any
 
 from .config import Config, load_config
 from .database import Database
+from .symbol_resolution import SymbolResolver
 
 
 class SearchEngine:
@@ -13,6 +14,14 @@ class SearchEngine:
         else:
             config = load_config()
             self.db = Database(config.db_path)
+
+        self._resolver = None  # Lazy initialization
+
+    def _get_resolver(self) -> SymbolResolver:
+        """Get or create SymbolResolver instance."""
+        if self._resolver is None:
+            self._resolver = SymbolResolver(self.db)
+        return self._resolver
 
     def search(self, query: str, limit: int = 50, level: str = "prefix") -> list[dict[str, Any]]:
         if level == "exact":
@@ -67,6 +76,43 @@ class SearchEngine:
             (file_path, limit),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+    def search_definition(
+        self,
+        symbol_name: str,
+        reference_file: str | None = None
+    ) -> dict[str, Any] | None:
+        """
+        Найти определение символа с разрешением импортов.
+
+        Args:
+            symbol_name: Имя символа
+            reference_file: Опционально: файл, где используется символ
+
+        Returns:
+            Словарь с информацией о символе или None
+        """
+        # Если указан файл - используем резолвер
+        if reference_file:
+            resolver = self._get_resolver()
+            return resolver.resolve_symbol(symbol_name, reference_file)
+
+        # Иначе - ищем все символы с таким именем
+        symbols = self.db.get_symbols_by_name(symbol_name)
+
+        if not symbols:
+            return None
+
+        # Если один символ - возвращаем его
+        if len(symbols) == 1:
+            return symbols[0]
+
+        # Если несколько - возвращаем первый (class/interface приоритет)
+        for symbol in symbols:
+            if symbol["kind"] in ("class", "interface"):
+                return symbol
+
+        return symbols[0]
 
     def close(self):
         self.db.close()

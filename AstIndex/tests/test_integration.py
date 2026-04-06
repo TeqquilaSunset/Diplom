@@ -288,6 +288,29 @@ class TestSearchIntegration:
         assert result.exit_code != 0
 
 
+class TestDefinitionCommand:
+    """Test definition search functionality."""
+
+    def test_search_definition_with_imports(self, config, sample_csharp_project):
+        """Test finding definition with import resolution."""
+        from ast_index.search import SearchEngine
+
+        # Index the project
+        with Indexer(config=config) as indexer:
+            indexer.index()
+
+        # Search for definition
+        with SearchEngine(config=config) as engine:
+            result = engine.search_definition(
+                symbol_name="UserRepository",
+                reference_file="/project/Controllers/HomeController.cs"
+            )
+
+        assert result is not None
+        assert result["name"] == "UserRepository"
+        assert result["kind"] == "class"
+
+
 class TestConfigIntegration:
     """Test configuration."""
 
