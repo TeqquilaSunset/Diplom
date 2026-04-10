@@ -104,7 +104,7 @@ class TestParallelIndexingIntegration:
 
         # Sequential indexing
         with Indexer(config=config, use_parallel=False) as indexer_seq:
-            stats_seq = indexer.index()
+            stats_seq = indexer_seq.index()
 
         # Clear database
         from ast_index.database import Database

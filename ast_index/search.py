@@ -27,15 +27,34 @@ class SearchEngine:
         if level == "exact":
             return self.db.get_symbols_by_name(query)[:limit]
         elif level == "prefix":
+            # FTS5 doesn't support suffix search (* at the beginning)
+            # Auto-fallback to fuzzy for wildcard patterns
+            if query.startswith("*"):
+                # Remove leading * and use fuzzy search
+                clean_query = query.lstrip("*")
+                return self._fuzzy_search(clean_query, limit)
             fts_query = f'"{query}"*'
             return self.db.search_symbols(fts_query, limit)
         else:
             return self._fuzzy_search(query, limit)
 
     def _fuzzy_search(self, query: str, limit: int) -> list[dict[str, Any]]:
+        """
+        Fuzzy search with deduplication by symbol name.
+
+        Returns only one entry per unique symbol name, preferring class/interface.
+        """
         pattern = f"%{query}%"
         cursor = self.db._conn.execute(
-            "SELECT * FROM symbols WHERE name LIKE ? ORDER BY name LIMIT ?", (pattern, limit)
+            """
+            SELECT * FROM symbols WHERE name LIKE ?
+            GROUP BY name
+            ORDER BY
+                CASE WHEN kind IN ('class', 'interface') THEN 0 ELSE 1 END,
+                name
+            LIMIT ?
+            """,
+            (pattern, limit),
         )
         return [dict(row) for row in cursor.fetchall()]
 

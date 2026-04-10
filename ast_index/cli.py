@@ -288,7 +288,7 @@ def usings(file_path: str, root: str, format: str):
 @click.argument("symbol")
 @click.option("--root", type=click.Path(exists=True), default=".", help="Project root directory")
 @click.option("--format", type=click.Choice(["text", "json"]), default="text", help="Output format")
-@click.option("--file", type=str, help="Reference file path for import resolution")
+@click.option("--file", type=str, help="File where symbol is used (helps resolve which definition when multiple exist)")
 def definition(symbol: str, root: str, format: str, file: str | None):
     """Find symbol definition with import resolution."""
     config = load_config(Path(root))

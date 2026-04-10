@@ -14,6 +14,12 @@ DEFAULT_EXCLUDES = [
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
+    # C# specific
+    "bin",
+    "obj",
+    ".vs",
+    ".vscode",
+    "publish",
 ]
 
 DEFAULT_INCLUDES = ["*.py", "*.cs", "*.js", "*.ts", "*.tsx"]
